@@ -1,0 +1,26 @@
+{
+  "name": "task_manager",
+  "version": "1.0.0",
+  "description": "A task manager backend with MongoDB, expressjs",
+  "main": "server.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "keywords": [
+    "task",
+    "manager",
+    "backend",
+    "mongodb",
+    "mongoose",
+    "expressjs"
+  ],
+  "author": "Smit",
+  "license": "ISC",
+  "dependencies": {
+    "cookie-parser": "^1.4.6",
+    "cors": "^2.8.5",
+    "dotenv": "^16.4.5",
+    "express": "^4.19.1",
+    "mongoose": "^8.2.3"
+  }
+}
