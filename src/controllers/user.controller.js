@@ -2,6 +2,27 @@ import { ApiError } from '../utlis/ApiError.js'
 import { asyncHandler } from '../utlis/asyncHandler.js'
 import { User } from '../models/user.model.js'
 import { ApiResponse } from '../utlis/ApiResponse.js'
+import bcrypt from 'bcrypt'
+
+const cookieOptions = {
+  httpOnly: true,
+  secure: true,
+}
+
+const generateTokens = async (userID) => {
+  try {
+    const user = await User.findById(userID)
+    const accessToken = user.generateAccessToken()
+    const refreshToken = user.generateRefreshToken()
+
+    user.refreshToken = refreshToken
+    await user.save({ validateBeforeSave: false })
+
+    return { accessToken, refreshToken }
+  } catch (error) {
+    throw new ApiError(500, 'Something went wrong while generating tokens')
+  }
+}
 
 const registerUser = asyncHandler(async (req, res) => {
   //TODO: get data from req
@@ -43,4 +64,48 @@ const registerUser = asyncHandler(async (req, res) => {
     .json(new ApiResponse(200, createdUser, 'User registered successfully'))
 })
 
-export { registerUser }
+const loginUser = asyncHandler(async (req, res) => {
+  const { email, password } = req.body
+
+  if (!email || !password) {
+    throw new ApiError(401, 'Email and password is required')
+  }
+
+  const user = await User.findOne({ email })
+
+  if (!user) {
+    throw new ApiError(404, 'User not found')
+  }
+
+  const isPasswordCorrect = await user.isPasswordCorrect(password)
+
+  if (!isPasswordCorrect) {
+    throw new ApiError(401, 'Incorrect password')
+  }
+
+  const { accessToken, refreshToken } = await generateTokens(user._id)
+
+  return res
+    .status(200)
+    .cookie('accessToken', accessToken, cookieOptions)
+    .cookie('refreshToken', refreshToken, cookieOptions)
+    .json(new ApiResponse(200, user, 'User found and valid'))
+})
+
+const logoutUser = asyncHandler(async (req, res) => {
+  const user = await User.findByIdAndUpdate(
+    req.user._id,
+    { $unset: { refreshToken: 1 } },
+    { new: true }
+  )
+
+  console.log(user)
+
+  return res
+    .status(200)
+    .clearCookie('accessToken', cookieOptions)
+    .clearCookie('refreshToken', cookieOptions)
+    .json(new ApiResponse(200, 'User logged out'))
+})
+
+export { registerUser, loginUser, logoutUser }
