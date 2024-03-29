@@ -1,8 +1,7 @@
-import { ApiError } from '../utlis/ApiError.js'
-import { asyncHandler } from '../utlis/asyncHandler.js'
 import { User } from '../models/user.model.js'
+import { ApiError } from '../utlis/ApiError.js'
 import { ApiResponse } from '../utlis/ApiResponse.js'
-import bcrypt from 'bcrypt'
+import { asyncHandler } from '../utlis/asyncHandler.js'
 
 const cookieOptions = {
   httpOnly: true,
@@ -67,7 +66,7 @@ const registerUser = asyncHandler(async (req, res) => {
 const loginUser = asyncHandler(async (req, res) => {
   const { email, password } = req.body
 
-  if (!email || !password) {
+  if (!(email || password)) {
     throw new ApiError(401, 'Email and password is required')
   }
 
@@ -85,11 +84,16 @@ const loginUser = asyncHandler(async (req, res) => {
 
   const { accessToken, refreshToken } = await generateTokens(user._id)
 
+  const outUser = await User.findOne(
+    { email },
+    { password: 0, refreshToken: 0 }
+  )
+
   return res
     .status(200)
     .cookie('accessToken', accessToken, cookieOptions)
     .cookie('refreshToken', refreshToken, cookieOptions)
-    .json(new ApiResponse(200, user, 'User found and valid'))
+    .json(new ApiResponse(200, outUser, 'User found and valid'))
 })
 
 const logoutUser = asyncHandler(async (req, res) => {
@@ -99,8 +103,6 @@ const logoutUser = asyncHandler(async (req, res) => {
     { new: true }
   )
 
-  console.log(user)
-
   return res
     .status(200)
     .clearCookie('accessToken', cookieOptions)
@@ -108,4 +110,4 @@ const logoutUser = asyncHandler(async (req, res) => {
     .json(new ApiResponse(200, 'User logged out'))
 })
 
-export { registerUser, loginUser, logoutUser }
+export { loginUser, logoutUser, registerUser }

@@ -11,7 +11,7 @@ import { ApiError } from '../utlis/ApiError.js'
 //TODO: if not matched give error
 //TODO: if matched, regenerate access token and refresh token and send it in secured cookie
 
-const verifyJWT = asyncHandler(async (req, res, next) => {
+const verifyJWT = asyncHandler(async (req, _, next) => {
   try {
     const token =
       req.cookies?.accessToken ||
